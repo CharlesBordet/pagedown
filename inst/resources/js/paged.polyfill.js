@@ -3,10 +3,417 @@
  */
 
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Paged = {}));
-}(this, (function (exports) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.PagedPolyfill = factory());
+}(this, (function () { 'use strict';
+
+	var eventEmitter = {exports: {}};
+
+	var d$3 = {exports: {}};
+
+	var isImplemented$6 = function () {
+		var assign = Object.assign, obj;
+		if (typeof assign !== "function") return false;
+		obj = { foo: "raz" };
+		assign(obj, { bar: "dwa" }, { trzy: "trzy" });
+		return (obj.foo + obj.bar + obj.trzy) === "razdwatrzy";
+	};
+
+	var isImplemented$5 = function () {
+		try {
+			Object.keys("primitive");
+			return true;
+		} catch (e) {
+	 return false;
+	}
+	};
+
+	// eslint-disable-next-line no-empty-function
+	var noop$4 = function () {};
+
+	var _undefined = noop$4(); // Support ES3 engines
+
+	var isValue$5 = function (val) {
+	 return (val !== _undefined) && (val !== null);
+	};
+
+	var isValue$4 = isValue$5;
+
+	var keys$2 = Object.keys;
+
+	var shim$5 = function (object) {
+		return keys$2(isValue$4(object) ? Object(object) : object);
+	};
+
+	var keys$1 = isImplemented$5()
+		? Object.keys
+		: shim$5;
+
+	var isValue$3 = isValue$5;
+
+	var validValue$1 = function (value) {
+		if (!isValue$3(value)) throw new TypeError("Cannot use null or undefined");
+		return value;
+	};
+
+	var keys  = keys$1
+	  , value$3 = validValue$1
+	  , max$1   = Math.max;
+
+	var shim$4 = function (dest, src /*, …srcn*/) {
+		var error, i, length = max$1(arguments.length, 2), assign;
+		dest = Object(value$3(dest));
+		assign = function (key) {
+			try {
+				dest[key] = src[key];
+			} catch (e) {
+				if (!error) error = e;
+			}
+		};
+		for (i = 1; i < length; ++i) {
+			src = arguments[i];
+			keys(src).forEach(assign);
+		}
+		if (error !== undefined) throw error;
+		return dest;
+	};
+
+	var assign$2 = isImplemented$6()
+		? Object.assign
+		: shim$4;
+
+	var isValue$2 = isValue$5;
+
+	var forEach$1 = Array.prototype.forEach, create$6 = Object.create;
+
+	var process = function (src, obj) {
+		var key;
+		for (key in src) obj[key] = src[key];
+	};
+
+	// eslint-disable-next-line no-unused-vars
+	var normalizeOptions = function (opts1 /*, …options*/) {
+		var result = create$6(null);
+		forEach$1.call(arguments, function (options) {
+			if (!isValue$2(options)) return;
+			process(Object(options), result);
+		});
+		return result;
+	};
+
+	var isCallable$1 = function (obj) {
+	 return typeof obj === "function";
+	};
+
+	var str = "razdwatrzy";
+
+	var isImplemented$4 = function () {
+		if (typeof str.contains !== "function") return false;
+		return (str.contains("dwa") === true) && (str.contains("foo") === false);
+	};
+
+	var indexOf$3 = String.prototype.indexOf;
+
+	var shim$3 = function (searchString/*, position*/) {
+		return indexOf$3.call(this, searchString, arguments[1]) > -1;
+	};
+
+	var contains$1 = isImplemented$4()
+		? String.prototype.contains
+		: shim$3;
+
+	var assign$1        = assign$2
+	  , normalizeOpts = normalizeOptions
+	  , isCallable    = isCallable$1
+	  , contains      = contains$1
+
+	  , d$2;
+
+	d$2 = d$3.exports = function (dscr, value/*, options*/) {
+		var c, e, w, options, desc;
+		if ((arguments.length < 2) || (typeof dscr !== 'string')) {
+			options = value;
+			value = dscr;
+			dscr = null;
+		} else {
+			options = arguments[2];
+		}
+		if (dscr == null) {
+			c = w = true;
+			e = false;
+		} else {
+			c = contains.call(dscr, 'c');
+			e = contains.call(dscr, 'e');
+			w = contains.call(dscr, 'w');
+		}
+
+		desc = { value: value, configurable: c, enumerable: e, writable: w };
+		return !options ? desc : assign$1(normalizeOpts(options), desc);
+	};
+
+	d$2.gs = function (dscr, get, set/*, options*/) {
+		var c, e, options, desc;
+		if (typeof dscr !== 'string') {
+			options = set;
+			set = get;
+			get = dscr;
+			dscr = null;
+		} else {
+			options = arguments[3];
+		}
+		if (get == null) {
+			get = undefined;
+		} else if (!isCallable(get)) {
+			options = get;
+			get = set = undefined;
+		} else if (set == null) {
+			set = undefined;
+		} else if (!isCallable(set)) {
+			options = set;
+			set = undefined;
+		}
+		if (dscr == null) {
+			c = true;
+			e = false;
+		} else {
+			c = contains.call(dscr, 'c');
+			e = contains.call(dscr, 'e');
+		}
+
+		desc = { get: get, set: set, configurable: c, enumerable: e };
+		return !options ? desc : assign$1(normalizeOpts(options), desc);
+	};
+
+	var validCallable = function (fn) {
+		if (typeof fn !== "function") throw new TypeError(fn + " is not a function");
+		return fn;
+	};
+
+	(function (module, exports) {
+
+	var d        = d$3.exports
+	  , callable = validCallable
+
+	  , apply = Function.prototype.apply, call = Function.prototype.call
+	  , create = Object.create, defineProperty = Object.defineProperty
+	  , defineProperties = Object.defineProperties
+	  , hasOwnProperty = Object.prototype.hasOwnProperty
+	  , descriptor = { configurable: true, enumerable: false, writable: true }
+
+	  , on, once, off, emit, methods, descriptors, base;
+
+	on = function (type, listener) {
+		var data;
+
+		callable(listener);
+
+		if (!hasOwnProperty.call(this, '__ee__')) {
+			data = descriptor.value = create(null);
+			defineProperty(this, '__ee__', descriptor);
+			descriptor.value = null;
+		} else {
+			data = this.__ee__;
+		}
+		if (!data[type]) data[type] = listener;
+		else if (typeof data[type] === 'object') data[type].push(listener);
+		else data[type] = [data[type], listener];
+
+		return this;
+	};
+
+	once = function (type, listener) {
+		var once, self;
+
+		callable(listener);
+		self = this;
+		on.call(this, type, once = function () {
+			off.call(self, type, once);
+			apply.call(listener, this, arguments);
+		});
+
+		once.__eeOnceListener__ = listener;
+		return this;
+	};
+
+	off = function (type, listener) {
+		var data, listeners, candidate, i;
+
+		callable(listener);
+
+		if (!hasOwnProperty.call(this, '__ee__')) return this;
+		data = this.__ee__;
+		if (!data[type]) return this;
+		listeners = data[type];
+
+		if (typeof listeners === 'object') {
+			for (i = 0; (candidate = listeners[i]); ++i) {
+				if ((candidate === listener) ||
+						(candidate.__eeOnceListener__ === listener)) {
+					if (listeners.length === 2) data[type] = listeners[i ? 0 : 1];
+					else listeners.splice(i, 1);
+				}
+			}
+		} else {
+			if ((listeners === listener) ||
+					(listeners.__eeOnceListener__ === listener)) {
+				delete data[type];
+			}
+		}
+
+		return this;
+	};
+
+	emit = function (type) {
+		var i, l, listener, listeners, args;
+
+		if (!hasOwnProperty.call(this, '__ee__')) return;
+		listeners = this.__ee__[type];
+		if (!listeners) return;
+
+		if (typeof listeners === 'object') {
+			l = arguments.length;
+			args = new Array(l - 1);
+			for (i = 1; i < l; ++i) args[i - 1] = arguments[i];
+
+			listeners = listeners.slice();
+			for (i = 0; (listener = listeners[i]); ++i) {
+				apply.call(listener, this, args);
+			}
+		} else {
+			switch (arguments.length) {
+			case 1:
+				call.call(listeners, this);
+				break;
+			case 2:
+				call.call(listeners, this, arguments[1]);
+				break;
+			case 3:
+				call.call(listeners, this, arguments[1], arguments[2]);
+				break;
+			default:
+				l = arguments.length;
+				args = new Array(l - 1);
+				for (i = 1; i < l; ++i) {
+					args[i - 1] = arguments[i];
+				}
+				apply.call(listeners, this, args);
+			}
+		}
+	};
+
+	methods = {
+		on: on,
+		once: once,
+		off: off,
+		emit: emit
+	};
+
+	descriptors = {
+		on: d(on),
+		once: d(once),
+		off: d(off),
+		emit: d(emit)
+	};
+
+	base = defineProperties({}, descriptors);
+
+	module.exports = exports = function (o) {
+		return (o == null) ? create(base) : defineProperties(Object(o), descriptors);
+	};
+	exports.methods = methods;
+	}(eventEmitter, eventEmitter.exports));
+
+	var EventEmitter = eventEmitter.exports;
+
+	/**
+	 * Hooks allow for injecting functions that must all complete in order before finishing
+	 * They will execute in parallel but all must finish before continuing
+	 * Functions may return a promise if they are asycn.
+	 * From epubjs/src/utils/hooks
+	 * @param {any} context scope of this
+	 * @example this.content = new Hook(this);
+	 */
+	class Hook {
+		constructor(context){
+			this.context = context || this;
+			this.hooks = [];
+		}
+
+		/**
+		 * Adds a function to be run before a hook completes
+		 * @example this.content.register(function(){...});
+		 * @return {undefined} void
+		 */
+		register(){
+			for(var i = 0; i < arguments.length; ++i) {
+				if (typeof arguments[i]  === "function") {
+					this.hooks.push(arguments[i]);
+				} else {
+					// unpack array
+					for(var j = 0; j < arguments[i].length; ++j) {
+						this.hooks.push(arguments[i][j]);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Triggers a hook to run all functions
+		 * @example this.content.trigger(args).then(function(){...});
+		 * @return {Promise} results
+		 */
+		trigger(){
+			var args = arguments;
+			var context = this.context;
+			var promises = [];
+
+			this.hooks.forEach(function(task) {
+				var executing = task.apply(context, args);
+
+				if(executing && typeof executing["then"] === "function") {
+					// Task is a function that returns a promise
+					promises.push(executing);
+				}
+				// Otherwise Task resolves immediately, add resolved promise with result
+				promises.push(new Promise((resolve, reject) => {
+					resolve(executing);
+				}));
+			});
+
+
+			return Promise.all(promises);
+		}
+
+		/**
+	   * Triggers a hook to run all functions synchronously
+	   * @example this.content.trigger(args).then(function(){...});
+	   * @return {Array} results
+	   */
+		triggerSync(){
+			var args = arguments;
+			var context = this.context;
+			var results = [];
+
+			this.hooks.forEach(function(task) {
+				var executing = task.apply(context, args);
+
+				results.push(executing);
+			});
+
+
+			return results;
+		}
+
+		// Adds a function to be run before a hook completes
+		list(){
+			return this.hooks;
+		}
+
+		clear(){
+			return this.hooks = [];
+		}
+	}
 
 	function getBoundingClientRect(element) {
 		if (!element) {
@@ -650,7 +1057,7 @@
 	}
 
 
-	function indexOf$3(node) {
+	function indexOf$2(node) {
 		let parent = node.parentNode;
 		if (!parent) {
 			return 0;
@@ -861,413 +1268,6 @@
 		constructor(message, items) {
 			super(message);
 			this.items = items;
-		}
-	}
-
-	var eventEmitter = {exports: {}};
-
-	var d$3 = {exports: {}};
-
-	var isImplemented$6 = function () {
-		var assign = Object.assign, obj;
-		if (typeof assign !== "function") return false;
-		obj = { foo: "raz" };
-		assign(obj, { bar: "dwa" }, { trzy: "trzy" });
-		return (obj.foo + obj.bar + obj.trzy) === "razdwatrzy";
-	};
-
-	var isImplemented$5 = function () {
-		try {
-			Object.keys("primitive");
-			return true;
-		} catch (e) {
-	 return false;
-	}
-	};
-
-	// eslint-disable-next-line no-empty-function
-	var noop$4 = function () {};
-
-	var _undefined = noop$4(); // Support ES3 engines
-
-	var isValue$5 = function (val) {
-	 return (val !== _undefined) && (val !== null);
-	};
-
-	var isValue$4 = isValue$5;
-
-	var keys$2 = Object.keys;
-
-	var shim$5 = function (object) {
-		return keys$2(isValue$4(object) ? Object(object) : object);
-	};
-
-	var keys$1 = isImplemented$5()
-		? Object.keys
-		: shim$5;
-
-	var isValue$3 = isValue$5;
-
-	var validValue$1 = function (value) {
-		if (!isValue$3(value)) throw new TypeError("Cannot use null or undefined");
-		return value;
-	};
-
-	var keys  = keys$1
-	  , value$3 = validValue$1
-	  , max$1   = Math.max;
-
-	var shim$4 = function (dest, src /*, …srcn*/) {
-		var error, i, length = max$1(arguments.length, 2), assign;
-		dest = Object(value$3(dest));
-		assign = function (key) {
-			try {
-				dest[key] = src[key];
-			} catch (e) {
-				if (!error) error = e;
-			}
-		};
-		for (i = 1; i < length; ++i) {
-			src = arguments[i];
-			keys(src).forEach(assign);
-		}
-		if (error !== undefined) throw error;
-		return dest;
-	};
-
-	var assign$2 = isImplemented$6()
-		? Object.assign
-		: shim$4;
-
-	var isValue$2 = isValue$5;
-
-	var forEach$1 = Array.prototype.forEach, create$6 = Object.create;
-
-	var process = function (src, obj) {
-		var key;
-		for (key in src) obj[key] = src[key];
-	};
-
-	// eslint-disable-next-line no-unused-vars
-	var normalizeOptions = function (opts1 /*, …options*/) {
-		var result = create$6(null);
-		forEach$1.call(arguments, function (options) {
-			if (!isValue$2(options)) return;
-			process(Object(options), result);
-		});
-		return result;
-	};
-
-	var isCallable$1 = function (obj) {
-	 return typeof obj === "function";
-	};
-
-	var str = "razdwatrzy";
-
-	var isImplemented$4 = function () {
-		if (typeof str.contains !== "function") return false;
-		return (str.contains("dwa") === true) && (str.contains("foo") === false);
-	};
-
-	var indexOf$2 = String.prototype.indexOf;
-
-	var shim$3 = function (searchString/*, position*/) {
-		return indexOf$2.call(this, searchString, arguments[1]) > -1;
-	};
-
-	var contains$1 = isImplemented$4()
-		? String.prototype.contains
-		: shim$3;
-
-	var assign$1        = assign$2
-	  , normalizeOpts = normalizeOptions
-	  , isCallable    = isCallable$1
-	  , contains      = contains$1
-
-	  , d$2;
-
-	d$2 = d$3.exports = function (dscr, value/*, options*/) {
-		var c, e, w, options, desc;
-		if ((arguments.length < 2) || (typeof dscr !== 'string')) {
-			options = value;
-			value = dscr;
-			dscr = null;
-		} else {
-			options = arguments[2];
-		}
-		if (dscr == null) {
-			c = w = true;
-			e = false;
-		} else {
-			c = contains.call(dscr, 'c');
-			e = contains.call(dscr, 'e');
-			w = contains.call(dscr, 'w');
-		}
-
-		desc = { value: value, configurable: c, enumerable: e, writable: w };
-		return !options ? desc : assign$1(normalizeOpts(options), desc);
-	};
-
-	d$2.gs = function (dscr, get, set/*, options*/) {
-		var c, e, options, desc;
-		if (typeof dscr !== 'string') {
-			options = set;
-			set = get;
-			get = dscr;
-			dscr = null;
-		} else {
-			options = arguments[3];
-		}
-		if (get == null) {
-			get = undefined;
-		} else if (!isCallable(get)) {
-			options = get;
-			get = set = undefined;
-		} else if (set == null) {
-			set = undefined;
-		} else if (!isCallable(set)) {
-			options = set;
-			set = undefined;
-		}
-		if (dscr == null) {
-			c = true;
-			e = false;
-		} else {
-			c = contains.call(dscr, 'c');
-			e = contains.call(dscr, 'e');
-		}
-
-		desc = { get: get, set: set, configurable: c, enumerable: e };
-		return !options ? desc : assign$1(normalizeOpts(options), desc);
-	};
-
-	var validCallable = function (fn) {
-		if (typeof fn !== "function") throw new TypeError(fn + " is not a function");
-		return fn;
-	};
-
-	(function (module, exports) {
-
-	var d        = d$3.exports
-	  , callable = validCallable
-
-	  , apply = Function.prototype.apply, call = Function.prototype.call
-	  , create = Object.create, defineProperty = Object.defineProperty
-	  , defineProperties = Object.defineProperties
-	  , hasOwnProperty = Object.prototype.hasOwnProperty
-	  , descriptor = { configurable: true, enumerable: false, writable: true }
-
-	  , on, once, off, emit, methods, descriptors, base;
-
-	on = function (type, listener) {
-		var data;
-
-		callable(listener);
-
-		if (!hasOwnProperty.call(this, '__ee__')) {
-			data = descriptor.value = create(null);
-			defineProperty(this, '__ee__', descriptor);
-			descriptor.value = null;
-		} else {
-			data = this.__ee__;
-		}
-		if (!data[type]) data[type] = listener;
-		else if (typeof data[type] === 'object') data[type].push(listener);
-		else data[type] = [data[type], listener];
-
-		return this;
-	};
-
-	once = function (type, listener) {
-		var once, self;
-
-		callable(listener);
-		self = this;
-		on.call(this, type, once = function () {
-			off.call(self, type, once);
-			apply.call(listener, this, arguments);
-		});
-
-		once.__eeOnceListener__ = listener;
-		return this;
-	};
-
-	off = function (type, listener) {
-		var data, listeners, candidate, i;
-
-		callable(listener);
-
-		if (!hasOwnProperty.call(this, '__ee__')) return this;
-		data = this.__ee__;
-		if (!data[type]) return this;
-		listeners = data[type];
-
-		if (typeof listeners === 'object') {
-			for (i = 0; (candidate = listeners[i]); ++i) {
-				if ((candidate === listener) ||
-						(candidate.__eeOnceListener__ === listener)) {
-					if (listeners.length === 2) data[type] = listeners[i ? 0 : 1];
-					else listeners.splice(i, 1);
-				}
-			}
-		} else {
-			if ((listeners === listener) ||
-					(listeners.__eeOnceListener__ === listener)) {
-				delete data[type];
-			}
-		}
-
-		return this;
-	};
-
-	emit = function (type) {
-		var i, l, listener, listeners, args;
-
-		if (!hasOwnProperty.call(this, '__ee__')) return;
-		listeners = this.__ee__[type];
-		if (!listeners) return;
-
-		if (typeof listeners === 'object') {
-			l = arguments.length;
-			args = new Array(l - 1);
-			for (i = 1; i < l; ++i) args[i - 1] = arguments[i];
-
-			listeners = listeners.slice();
-			for (i = 0; (listener = listeners[i]); ++i) {
-				apply.call(listener, this, args);
-			}
-		} else {
-			switch (arguments.length) {
-			case 1:
-				call.call(listeners, this);
-				break;
-			case 2:
-				call.call(listeners, this, arguments[1]);
-				break;
-			case 3:
-				call.call(listeners, this, arguments[1], arguments[2]);
-				break;
-			default:
-				l = arguments.length;
-				args = new Array(l - 1);
-				for (i = 1; i < l; ++i) {
-					args[i - 1] = arguments[i];
-				}
-				apply.call(listeners, this, args);
-			}
-		}
-	};
-
-	methods = {
-		on: on,
-		once: once,
-		off: off,
-		emit: emit
-	};
-
-	descriptors = {
-		on: d(on),
-		once: d(once),
-		off: d(off),
-		emit: d(emit)
-	};
-
-	base = defineProperties({}, descriptors);
-
-	module.exports = exports = function (o) {
-		return (o == null) ? create(base) : defineProperties(Object(o), descriptors);
-	};
-	exports.methods = methods;
-	}(eventEmitter, eventEmitter.exports));
-
-	var EventEmitter = eventEmitter.exports;
-
-	/**
-	 * Hooks allow for injecting functions that must all complete in order before finishing
-	 * They will execute in parallel but all must finish before continuing
-	 * Functions may return a promise if they are asycn.
-	 * From epubjs/src/utils/hooks
-	 * @param {any} context scope of this
-	 * @example this.content = new Hook(this);
-	 */
-	class Hook {
-		constructor(context){
-			this.context = context || this;
-			this.hooks = [];
-		}
-
-		/**
-		 * Adds a function to be run before a hook completes
-		 * @example this.content.register(function(){...});
-		 * @return {undefined} void
-		 */
-		register(){
-			for(var i = 0; i < arguments.length; ++i) {
-				if (typeof arguments[i]  === "function") {
-					this.hooks.push(arguments[i]);
-				} else {
-					// unpack array
-					for(var j = 0; j < arguments[i].length; ++j) {
-						this.hooks.push(arguments[i][j]);
-					}
-				}
-			}
-		}
-
-		/**
-		 * Triggers a hook to run all functions
-		 * @example this.content.trigger(args).then(function(){...});
-		 * @return {Promise} results
-		 */
-		trigger(){
-			var args = arguments;
-			var context = this.context;
-			var promises = [];
-
-			this.hooks.forEach(function(task) {
-				var executing = task.apply(context, args);
-
-				if(executing && typeof executing["then"] === "function") {
-					// Task is a function that returns a promise
-					promises.push(executing);
-				}
-				// Otherwise Task resolves immediately, add resolved promise with result
-				promises.push(new Promise((resolve, reject) => {
-					resolve(executing);
-				}));
-			});
-
-
-			return Promise.all(promises);
-		}
-
-		/**
-	   * Triggers a hook to run all functions synchronously
-	   * @example this.content.trigger(args).then(function(){...});
-	   * @return {Array} results
-	   */
-		triggerSync(){
-			var args = arguments;
-			var context = this.context;
-			var results = [];
-
-			this.hooks.forEach(function(task) {
-				var executing = task.apply(context, args);
-
-				results.push(executing);
-			});
-
-
-			return results;
-		}
-
-		// Adds a function to be run before a hook completes
-		list(){
-			return this.hooks;
-		}
-
-		clear(){
-			return this.hooks = [];
 		}
 	}
 
@@ -1865,7 +1865,7 @@
 			if (isText(lastChild)) {
 
 				if (lastChild.parentNode.dataset.ref) {
-					lastNodeIndex = indexOf$3(lastChild);
+					lastNodeIndex = indexOf$2(lastChild);
 					lastChild = lastChild.parentNode;
 				} else {
 					lastChild = lastChild.previousSibling;
@@ -32670,13 +32670,59 @@
 
 	EventEmitter(Previewer.prototype);
 
-	exports.Chunker = Chunker;
-	exports.Handler = Handler;
-	exports.Polisher = Polisher;
-	exports.Previewer = Previewer;
-	exports.initializeHandlers = initializeHandlers;
-	exports.registerHandlers = registerHandlers;
+	var Paged = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		Chunker: Chunker,
+		Polisher: Polisher,
+		Previewer: Previewer,
+		Handler: Handler,
+		registerHandlers: registerHandlers,
+		initializeHandlers: initializeHandlers
+	});
 
-	Object.defineProperty(exports, '__esModule', { value: true });
+	window.Paged = Paged;
+
+	let ready = new Promise(function(resolve, reject){
+		if (document.readyState === "interactive" || document.readyState === "complete") {
+			resolve(document.readyState);
+			return;
+		}
+
+		document.onreadystatechange = function ($) {
+			if (document.readyState === "interactive") {
+				resolve(document.readyState);
+			}
+		};
+	});
+
+	let config = window.PagedConfig || {
+		auto: true,
+		before: undefined,
+		after: undefined,
+		content: undefined,
+		stylesheets: undefined,
+		renderTo: undefined,
+		settings: undefined
+	};
+
+	let previewer = new Previewer(config.settings);
+
+	ready.then(async function () {
+		let done;
+		if (config.before) {
+			await config.before();
+		}
+
+		if(config.auto !== false) {
+			done = await previewer.preview(config.content, config.stylesheets, config.renderTo);
+		}
+
+
+		if (config.after) {
+			await config.after(done);
+		}
+	});
+
+	return previewer;
 
 })));
